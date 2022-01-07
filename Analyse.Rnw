@@ -1,0 +1,586 @@
+% !TeX program = XeLaTeX
+\documentclass[11pt]{article}
+\usepackage{fontspec,xunicode}
+\usepackage[no-sscript]{xltxtra}
+%\setmainfont[Mapping=tex-text]{Garamond Normal}
+\setmonofont[Scale=0.8]{Consolas}
+\setmathrm{Optima}
+\setboldmathrm[BoldFont=Optima ExtraBlack]{Optima Bold}
+\usepackage{polyglossia}
+\setdefaultlanguage{french}
+\usepackage{amsmath,amssymb,colortbl,calc,listings,graphicx,color,makeidx,nonfloat,url,multicol}
+%\usepackage{numprint}
+\usepackage{siunitx}
+\sisetup{
+locale = FR,
+round-mode = places,
+round-precision = 3
+}
+\setcounter{tocdepth}{2}
+\definecolor{RedOrange}{cmyk}{0.8, 0.5, 0, 0.3}
+\definecolor{graym}{rgb}{0.96, 0.96, 0.96}
+\usepackage{caption}
+\captionsetup{labelfont={color=RedOrange,bf},textfont={color=RedOrange,it}}
+\usepackage[colorlinks=true,plainpages=true,linktocpage,hyperindex=true,citecolor=RedOrange,linkcolor=RedOrange,urlcolor=RedOrange]{hyperref}
+\usepackage{titlesec, blindtext, color}
+\definecolor{gray75}{gray}{0.75}
+\newcommand{\hsp}{\hspace{20pt}}
+\newcommand{\type}[1]{\textcolor{RedOrange}{\texttt{#1}}}
+\titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter\hsp\textcolor{gray75}{|}\hsp}{0pt}{\Huge\bfseries}
+\textwidth 16cm
+\textheight 23cm
+\topmargin -1.9cm
+\oddsidemargin .4cm
+\evensidemargin .2cm
+\marginparsep .5cm
+\footskip 1.5cm
+\headsep 1.5cm
+\marginparwidth 2cm
+\begin{document}
+
+%#F7F7F7
+<<echo=FALSE>>=
+thm = knit_theme$get("bclear")
+knit_theme$set(thm)
+opts_chunk$set(size = 'footnotesize',background='#E8E8E8')
+options(OutDec = ',')
+knitr::opts_chunk$set(fig.path = "../Imagesfigure/")
+@
+
+<<include=FALSE>>=
+library(lubridate)
+library(dplyr)
+library(here)
+if (requireNamespace("thematic"))
+  thematic::thematic_rmd(font = "auto")
+knitr::opts_knit$set(root.dir = here())
+@
+
+\begin{center}
+\vspace{-1.5cm}
+%\scalebox{.18}{\includegraphics{img/ifsttar.pdf}}
+
+\vspace{2cm}
+{\Large \textbf{CODE R POUR SONOREZÉ}}
+
+
+\vspace{4cm}
+4 janvier 2022
+
+\textcolor{RedOrange}{\rule{2.75cm}{.3pt}}
+
+\vspace{.3cm}
+{\large \textbf{Tristan Lorino}}
+\end{center}
+\thispagestyle{empty}
+
+\vspace*{3cm}
+\tableofcontents
+
+\newpage
+\section{Préalable}
+
+On commence par créer un projet RStudio qui sera contenu dans un dossier (déjà existant ou à créer).
+Dans ce dossier, on créé un dossier nommé \type{R} dans lequel on va stocker trois scripts R, qui seront à \textbf{exécuter dans cet ordre l'un après l'autre} : \type{import\_database.R}, \type{Statistiques-v2.R} et \type{Graphiques.R}.
+
+Le fichier \type{import\_database.R} se charge en premier lieu de télécharger et installer un package nommé \type{pacman}, qui va se charger d'importer si besoin, et de charger tous les autres packages nécessaires à l'exécution des scripts R.
+
+<<eval=FALSE>>=
+install.packages("pacman")
+library(pacman)
+pacman::p_load(thematic,lubridate,dplyr,tidyr,stringr,ggplot2,forcats,rgdal,sp,sf,
+               rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
+               viridis,forcats,mapview,scales)
+@
+
+\section{Importation des données}
+
+
+
+Le fichier \type{import\_database.R} permet d'importer les données NoiseCapture relatives au projet Sonorezé.
+
+Il nécessite l'emploi de quatre package : \type{\{here\}} pour utiliser des chemins relatifs dans le projet R, \type{\{lubridate\}} pour une utilisation poussée des dates, \type{\{dplyr\}} pour une gestion avancée des commandes et \type{\{stringr\}} pour une gestion poussée des chaînes de caractères.
+
+Il faut au préalable créer un dossier (ou répertoire) \type{metabase} dans le dossier du projet RStudio. L'exécution du script R va créer un dossier \type{data} dans \type{metabase}, puis un dossier \type{unzip} dans \type{data}. Tous les fichiers zippés des traces vont être stockés dans \type{data}, puis vont être dézippés dans \type{unzip} : chaque extraction d'archive donne lieu à la création d'un dossier. Finalement on obtient, pour chaque trace, un dossier contenant deux fichiers : \type{meta.properties} et \type{track.geojson}.
+
+On extrait ensuite :
+\begin{itemize}
+\item du fichier \type{meta.properties} : les champs \type{uuid} (pour lequel on ne conserve que les quatre premiers caractères), \type{Gain\_calibration} et \type{method\_calibration} ;
+
+<<eval=FALSE>>=
+uuid <- meta %>%
+        filter(startsWith(V1, 'uuid=')) %>%
+        str_sub(., 6, 9)
+
+      gain_cal<- meta %>%
+        filter(startsWith(V1, 'gain_calibration=')) %>%
+        str_remove(., "gain_calibration=")
+
+      method_cal<- meta %>%
+        filter(startsWith(V1, 'method_calibration=')) %>%
+        str_remove(., "method_calibration=")
+@
+
+\item du fichier \type{track.geojson} : les champs \type{leq\_utc} (exprimé au format epoch, il est converti en date UTC), ceux des mesures de bruit pour les différentes fréquences, le Leq moyen, les coordonnées GPS et la précision (\textit{accuracy}).
+\end{itemize}
+
+<<eval=FALSE>>=
+data <- data[c("leq_100", "leq_125", ...,"leq_12500","leq_16000","leq_mean","x","y","leq_utc","accuracy")]
+@
+
+
+
+0n va ensuite repositionner en première place les colonnes \type{Id, Date, x} et \type{y}, puis assembler ces différentes informations pour n'avoir plus qu'un seul tableau de données nommés \type{noisecapture\_data}, que l'on va stocker dans le répertoire courant sous le nom \type{noisecapture\_data.Rda}.
+
+<<eval=FALSE>>=
+temp <- data %>%
+        mutate(Date = lubridate::as_datetime(.$leq_utc/1000, tz="UTC")) %>%
+        select(!leq_utc) %>%
+        mutate(Id=uuid) %>%
+        mutate(gain_calibration=gain_cal) %>%
+        mutate(method_calibration=method_cal) %>%
+        relocate(Id,Date,x,y)
+
+      noisecapture_data <- bind_rows(temp, noisecapture_data)
+      noisecapture_data
+      save(noisecapture_data, file ="noisecapture_data.Rda")
+@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Statistiques}
+
+\subsection{Introduction}
+
+Outre les packages précédemment cités, on charge en plus le package \type{\{forcats\}}, qui permet de recoder facilement les modalités d'un facteur.
+
+En premier lieu, on regarde le nombre de mesures (enregistrements au pas d'une seconde) réalisées. Il y en a :
+<<>>=
+load(here("noisecapture_data.Rda"))
+data_nc <-as.data.frame(noisecapture_data)
+dim(data_nc)[1]
+@
+
+Ensuite on détecte les valeurs manquantes pour les coordonnées GPS, ainsi que les éventuelles dates aberrantes. Il y en a :
+<<>>=
+databer <- data_nc[data_nc$Date < "2021-11-01 00:00:01" | data_nc$x == "NA" | data_nc$y =="NA",]
+dim(databer)[1]
+@
+
+On calcule ensuite le nombre de mesures avec une précision supérieure à 20. Il y en a :
+<<>>=
+data_accuracy <- data_nc[data_nc$accuracy >= 20,]
+dim(data_accuracy)
+@
+
+Si l'on retire les mesures avec données manquantes ou précision insuffisante, on retient :
+<<>>=
+data_nc <- data_nc %>%
+  filter(x != "NA") %>%
+  filter(accuracy<20)
+
+dim(data_nc)[1]
+@
+soit $97{,}3$~\% des mesures.
+
+\subsection{Statistiques relatives aux mesures}
+
+On va créer différents tableaux de données :
+\begin{itemize}
+\item un nommé \type{AnaMes} pour le nombre de mesures par participants, avec pourcentage sur l'ensemble :
+<<eval=FALSE>>=
+AnaMes <- data_nc %>%
+  group_by(Id) %>%
+  summarise(n = n()) %>%
+  mutate(Pourcentage=n/sum(n)*100) %>%
+  arrange(desc(n))
+@
+
+\item  un nommé \type{data\_mes}, qui correspond à \type{data\_nc}, auquel on ajoute deux champs, \type{DateJour} et \type{DateHeure} :
+<<eval=FALSE>>=
+data_mes <- data_nc %>%
+  mutate(DateJour=as.Date(Date)) %>%
+  mutate(DateHeure=hour(as.POSIXct(Date)))
+data_mes
+@
+
+\item l'évolution du nombre de mesures par jour :
+<<eval=FALSE>>=
+data_mes_jour <- as.data.frame(data_mes) %>%
+  group_by(DateJour) %>%
+  summarise(NbMes = n()) %>%
+  mutate(NbMesCum=cumsum(NbMes))
+@
+
+\item l'évolution du nombre de participants par jour :
+<<eval=FALSE>>=
+data_ind <- data_mes %>%
+  group_by(DateJour) %>%
+  summarise(NbId = n_distinct(Id))
+@
+\end{itemize}
+
+
+\subsection{Statistiques relatives aux traces}
+
+À partir du tableau de données \type{data\_mes}, on créé un tableau de donnnées \type{data\_trace} avec :
+\begin{itemize}
+\item un identifiant des traces (plage de mesures consécutives) :
+<<eval=FALSE>>=
+data_trace <- as.data.frame(data_mes) %>%
+  arrange(Id,Date) %>%
+  mutate(IdTrace=cumsum(c(TRUE, as.integer(diff(as.POSIXct(Date)), units = "secs") >= 2L)))
+@
+
+\item deux variables relatives au jour, \type{DateJour} le jour sous la forme de date entière et \type{DateJourSem} le jour sous forme de jour de la semaine :
+<<eval=FALSE>>=
+  mutate(DateJour=as.Date(Date)) %>%
+  mutate(DateJourSem=wday(Date)) %>%
+@
+
+\item et on calcule la durée de chaque trace en secondes et minutes :
+<<eval=FALSE>>=
+  group_by(IdTrace) %>%
+  mutate(DureeSec=n()) %>%
+  arrange(Id,desc(DureeSec)) %>%
+  mutate(DureeMinutes=DureeSec/60)
+@
+\end{itemize}
+
+
+Ensuite on calcule le nombre de traces par participants, avec pourcentage sur l'ensemble :
+<<eval=FALSE>>=
+data_trace %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  summarise(n = n()) %>%
+  mutate(Pourcentage=n/sum(n)*100) %>%
+  arrange(desc(n))
+@
+
+On créé ensuite une variable factorielle \type{Classe} pour des plages de durée :
+<<eval=FALSE>>=
+data_trace <- data_trace %>%
+  mutate(Classe = case_when(DureeMinutes < 5 ~ "0-5",
+                            DureeMinutes < 10 ~ "5-10",
+                            DureeMinutes < 15 ~ "10-15",
+                            DureeMinutes < 20 ~ "15-20",
+                            DureeMinutes < 25 ~ "20-25",
+                            DureeMinutes < 30 ~ "25-30",
+                            DureeMinutes < 35 ~ "30-35",
+                            DureeMinutes < 40 ~ "35-40",
+                            DureeMinutes < 45 ~ "40-45",
+                            DureeMinutes < 50 ~ "45-50",
+                            DureeMinutes < 55 ~ "50-55",
+                            DureeMinutes < 60 ~ "55-60",
+                            TRUE ~ "> 60")) %>%
+  mutate(Classe = factor(Classe))
+@
+
+Mais les modalités ne sont pas dans le bon ordre :
+<<eval=FALSE>>=
+levels(data_trace$Classe)
+[1] "0-5"   "> 60"  "20-25" "15-20" "5-10"
+@
+
+Pour les réordonner, on fait appel au package \type{\{forcats\}} :
+<<eval=FALSE>>=
+data_trace <- data_trace %>%
+  mutate(Classe = forcats::fct_relevel(Classe,c("0-5","5-10","15-20","20-25","> 60"))) %>%
+  arrange(Classe)
+levels(data_trace$Classe)
+
+[1] "0-5"   "5-10"  "15-20" "20-25" "> 60"
+@
+
+On détermine ensuite l'évolution du nombre de traces par jour et en cumulé :
+<<eval=FALSE>>=
+data_trace_jour <- data_trace %>%
+  group_by(DateJour) %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  summarise(NbTraceParJour = n()) %>%
+  mutate(NbTraceParJourCum=cumsum(NbTraceParJour))
+@
+
+Enfin on détermine l'évolution du nombre de traces par jour de la semaine :
+<<eval=FALSE>>=
+data_trace %>%
+  group_by(DateJourSem) %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  summarise(NbTraceParJourSem = n()) %>%
+  mutate(NbTracParJourSemCum=cumsum(NbTraceParJourSem))
+@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Graphiques}
+
+\subsection{Généralités}
+
+Pour avoir une virgule comme marque de décimale, on écrit :
+<<eval=FALSE>>=
+options(OutDec=",")
+@
+
+Pour avoir un délimiteur de millier, on écrit (par exemple ici pour l'axe des ordonnées) :
+<<eval=FALSE>>=
+scale_y_continuous(labels=function(x) format(x, big.mark = " ", scientific = FALSE), name="Effectif")
+@
+
+Pour des formats particuliers, comme la date, on fait appel au package \type{\{scales\}} :
+<<eval=FALSE>>=
+scale_x_date(breaks = data_mes_jour$DateJour, name="Date", date_labels = "%d/%m")
+@
+
+Enfin on sauvegarde les graphiques aux formats \type{png} et \type{pdf} dans un dossier spécifique qu'il aura fallu créer au préalable dans le dossier du projet (ce dossier spécifique s'appelle ici \type{Images}) :
+<<eval=FALSE>>=
+p <- ggplot(...)
+ggsave(device="pdf", here("Images","Pourcent_participant.pdf"),p)
+ggsave(device="jpeg", here("Images","Pourcent_participant.jpeg"),p)
+@
+
+
+\subsection{Graphiques relatifs aux individus}
+
+Le code suivant a été trouvé sur le net pour afficher un camembert creux (\textit{donut}) :
+<<eval=FALSE>>=
+AnaMesDonut <- AnaMes %>%
+  arrange(desc(Id)) %>%
+  mutate(lab.ypos = cumsum(Pourcentage) - 0.5*Pourcentage) %>%
+  arrange(desc(Pourcentage))
+
+colourCount <- length(unique(AnaMesDonut$Id))
+getPalette <- colorRampPalette(brewer.pal(9, "Blues"))
+colgrey <- colorRampPalette(c("black", "white"))(colourCount)
+
+p <- ggplot(AnaMesDonut, aes(x = 2, y = round(Pourcentage,2), fill = Id)) +
+  geom_bar(stat = "identity", color = "white") +
+  coord_polar(theta = "y", start = 0)+
+  geom_text(aes(y = lab.ypos, label = ifelse(round(Pourcentage,2)>3,round(Pourcentage,2),"")), col = colgrey) +
+  guides(colour = colgrey) +
+  scale_fill_manual(name="Participant(e)", values=getPalette(colourCount)) +
+  theme_void()+
+  xlim(0.5, 2.5)
+ggsave(device="pdf", here("Images","Pourcent_participant.pdf"),p)
+ggsave(device="jpeg", here("Images","Pourcent_participant.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Pourcent_participant.pdf}}
+\end{center}
+
+
+\subsection{Graphiques relatifs aux mesures}
+
+Pour la répartition des mesures en fonction de la période de la journée :
+<<eval=FALSE>>=
+p <- ggplot(data_mes, aes(x = factor(DateHeure))) +
+  geom_bar(fill="steelblue4") +
+  scale_y_continuous(labels=function(x) format(x, big.mark = " ", scientific = FALSE), name="Effectif") +
+  scale_x_discrete("Heure")
+ggsave(device="pdf", here("Images","Distrib_heure.pdf"),p)
+ggsave(device="jpeg", here("Images","Distrib_heure.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Distrib_heure.pdf}}
+\end{center}
+
+Pour la représentation graphique conjointe des nombre et nombre cumulé de mesures par jour, on a besoin de passer le tableau de données au format long (c.-à-d. de créer une colonne appelée \type{type} et comportant les valeurs \type{NbMes} et \type{NbMesCum}) :
+<<eval=FALSE>>=
+p <-data_mes_jour %>%
+  gather(., key="type",value="value",NbMes, NbMesCum) %>% #on passe au format long des données
+  mutate(DateJour=as.Date(DateJour, format = "%d.%m.%Y")) %>%
+  mutate(type = recode(type, NbMes = "Journalier", NbMesCum = "Cumulé")) %>%
+  as.data.frame() %>%
+  ggplot(aes(x=DateJour, y=value, fill=type)) +
+  geom_col(width=0.4, position=position_dodge(width=0.5)) +
+  scale_fill_manual(values=c("#10A8E3","#0A749F"), name="Nombre de mesures") +
+  scale_y_continuous(labels=function(x) format(x, big.mark = " ", scientific = FALSE), name="Effectif") +
+  scale_x_date(breaks = data_mes_jour$DateJour, name="Date", date_labels = "%d/%m") +
+  theme(axis.text.x = element_text(size=8, angle=45)) +
+  guides(fill = guide_legend(reverse=TRUE))
+ggsave(device="pdf", here("Images","Mesures_distrib_jour.pdf"),p)
+ggsave(device="jpeg", here("Images","Mesures_distrib_jour.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Mesures_distrib_jour.pdf}}
+\end{center}
+
+
+\subsection{Graphiques relatifs aux traces}
+
+Pour la représentation graphique conjointe des nombre et nombre cumulé de traces par jour, il est encore nécessaire de passer au format long :
+<<eval=FALSE>>=
+p <- data_trace_jour %>%
+  gather(., key="type",value="value",NbTraceParJour, NbTraceParJourCum) %>% #on passe au format long des données
+  mutate(DateJour=as.Date(DateJour, format = "%d.%m.%Y")) %>%
+  mutate(type = recode(type, NbTraceParJour = "Journalier", NbTraceParJourCum = "Cumulé")) %>%
+  as.data.frame() %>%
+  ggplot(aes(x=DateJour, y=value, fill=type)) +
+  geom_col(width=0.4, position=position_dodge(width=0.5)) +
+  scale_fill_manual(values=c("#10A8E3","#0A749F"), name="Nombre de traces") +
+  scale_y_continuous(name="Effectif") +
+  scale_x_date(breaks = data_trace_jour$DateJour, name="Date", date_labels = "%d/%m") +
+  theme(axis.text.x = element_text(size=8, angle=45)) +
+  guides(fill = guide_legend(reverse=TRUE))
+ggsave(device="pdf", here("Images","Traces_distrib_jour.pdf"),p)
+ggsave(device="jpeg", here("Images","Traces_distrib_jour.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Traces_distrib_jour.pdf}}
+\end{center}
+
+Pour la représentation graphique conjointe des nombre et nombre cumulé de traces par jour de la semaine :
+<<eval=FALSE>>=
+p <- data_trace_jour %>%
+  mutate(JourJ=wday(as.POSIXct(DateJour), label = TRUE, abbr=FALSE)) %>%
+  mutate(JourJ = factor(JourJ)) %>%
+  mutate(JourJ=fct_relevel(JourJ,c("Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"))) %>%
+  arrange(JourJ) %>%
+  as.data.frame() %>%
+  ggplot(aes(x=JourJ,y=NbTraceParJour,fill=JourJ)) +
+  geom_col(width=0.4, fill="#0A749F") +
+  scale_y_continuous(name="Effectif") +
+  scale_x_discrete(name="Jour de la semaine") +
+  theme(axis.text.x = element_text(size=8)) +
+  theme(legend.position = "none")
+ggsave(device="pdf", here("Images","Traces_distrib_joursem.pdf"),p)
+ggsave(device="jpeg", here("Images","Traces_distrib_joursem.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Traces_distrib_joursem.pdf}}
+\end{center}
+
+On va ensuite afficher la répartition des traces par plages de durées. D'emblée, pour avoir une échelle telle que les résultats soient lisibles, on va distinguer les traces dont la durée est inférieure à 5~min des autres.
+
+Pour les traces de courte durée :
+<<eval=FALSE>>=
+trace_classe_inf5 <- data_trace %>%
+  filter(DureeMinutes <= 5) %>%
+  mutate(Classe = case_when(DureeMinutes < 1 ~ "0-1",
+                            DureeMinutes < 2 ~ "1-2",
+                            DureeMinutes < 3 ~ "2-3",
+                            DureeMinutes < 4 ~ "3-4",
+                            TRUE ~ "4-5")) %>%
+  mutate(Classe = factor(Classe))
+levels(trace_classe_inf5$Classe)
+
+trace_classe_inf5 <- trace_classe_inf5 %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  mutate(Classe = forcats::fct_relevel(Classe,c("0-1","1-2","2-3","3-4","4-5"))) %>%
+  arrange(Classe)
+levels(trace_classe_inf5$Classe)
+
+p <- ggplot(trace_classe_inf5,aes(x = Classe)) +
+  geom_bar(fill="steelblue4") +
+  scale_x_discrete(name="Plages de durée (en minutes)") +
+  scale_y_continuous(name="Effectif", breaks= scales::pretty_breaks())
+ggsave(device="pdf", here("Images","Traces_distrib_dureemin.pdf"),p)
+ggsave(device="jpeg", here("Images","Traces_distrib_dureemin.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Traces_distrib_dureemin.pdf}}
+\end{center}
+
+Pour les traces de plus longue durée :
+<<eval=FALSE>>=
+trace_classe_sup5 <- trace_classe %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  filter(Classe != "0-5")
+
+ggplot(trace_classe_sup5,aes(x = Classe)) +
+  geom_bar(fill="steelblue4") +
+  scale_x_discrete(name="Plages de durée (en minutes)") +
+  scale_y_continuous(name="Effectif", breaks= scales::pretty_breaks())
+ggsave(device="pdf", here("Images","Traces_distrib_dureemax.pdf"),p)
+ggsave(device="jpeg", here("Images","Traces_distrib_dureemax.jpeg"),p)
+@
+
+\begin{center}
+\scalebox{.5}{\includegraphics{Images/Traces_distrib_dureemax.pdf}}
+\end{center}
+
+
+\subsection{Carto-graphiques}
+
+Merci à Pierre pour son initiation et le code ci-après ;-)\\[1ex]
+
+À noter qu'en théorie il est possible de sauvegarder directement les cartes dans des fichiers \type{png} grâce au package \type{\{mapview\}} (mais cela ne fonctionne pour l'instant pas pour moi)  :
+<<eval=FALSE>>=
+map <- leaflet(...)
+mapshot(map, here("Images","Mesures_Polygones.png"),remove_controls = c("zoomControl"))
+@
+
+Il me reste un problème : la mise en page de la légende.
+
+Pour évider un problème d'erreur survenant dans le calcul de la médiane ci-après, et qui exige des variables numériques, on ne retient que les variables d'intérêt :
+<<eval=FALSE>>=
+Data_numerique <- data_nc[,c("x","y","leq_mean")]
+@
+
+Ensuite on représente les niveaux de bruits avec des polygones :
+<<eval=FALSE>>=
+SPDF <- SpatialPointsDataFrame(coords=Data_numerique[,1:2], data=as.data.frame(Data_numerique))
+SPDF_sf <- st_as_sf(SPDF, crs = 4326, agr = "constant", remove = F)
+st_crs(SPDF_sf) <- 4326 #EPSG WGS84
+
+SPDF_sf_2154 <- st_transform(SPDF_sf, 2154) #LAMBERT 93
+
+bbox <- st_bbox(SPDF_sf_2154)
+grid <- sf::st_make_grid(st_as_sfc(bbox),cellsize = 50, square = FALSE)  #Grid of 50 meters
+st_crs(grid) <- 2154
+
+stations <- aggregate(x = SPDF_sf_2154, by = grid, FUN = median)         #Calculate median
+
+stations <- stations %>%
+  drop_na(geometry) %>%
+  drop_na(leq_mean)
+
+stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
+                        remove = F)
+
+stations_sf_4326 <- stations_sf %>%
+  st_transform(4326) # repasse en WGS84 (LATti LONgi )
+
+pal2 <- colorNumeric(
+  palette = "Blues", #"RdYlGn",
+  #n = 9,
+  domain = stations$leq_mean,
+  #na.color = "transparent",
+  #reverse = TRUE
+  )
+
+map <- leaflet(stations_sf_4326) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addScaleBar( position = c("bottomright"))%>%
+  addPolygons(color = ~pal2(leq_mean), weight = 0, smoothFactor = 0.,
+              opacity = 0.0, fillOpacity = 0.7,
+              ) %>%
+  addLegend("bottomleft",
+            pal = pal2,
+            #colors = ~pal2,
+            values = stations$leq_mean,
+            title = "Niveau moyen de bruit",
+            #labels = pal2,
+            labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
+            opacity = 1
+            )
+map
+#
+mapshot(map, here("Images","Mesures_Polygones.png"),remove_controls = c("zoomControl"))
+
+@
+
+
+
+\begin{center}
+\scalebox{.3}{\includegraphics{Images/Carto_polygons.jpeg}}
+\end{center}
+
+\end{document}

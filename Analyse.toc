@@ -1,0 +1,13 @@
+\selectlanguage *{french}
+\contentsline {section}{\numberline {1}Préalable}{2}{section.1}%
+\contentsline {section}{\numberline {2}Importation des données}{2}{section.2}%
+\contentsline {section}{\numberline {3}Statistiques}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Introduction}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Statistiques relatives aux mesures}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Statistiques relatives aux traces}{5}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Graphiques}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Généralités}{7}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Graphiques relatifs aux individus}{7}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Graphiques relatifs aux mesures}{8}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Graphiques relatifs aux traces}{9}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Carto-graphiques}{13}{subsection.4.5}%

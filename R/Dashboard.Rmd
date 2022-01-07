@@ -1,0 +1,92 @@
+---
+title: "SONOREZÉ"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,forcats,rgdal,sp,sf,
+               rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
+               viridis,forcats,mapview,scales)
+load(here("noisecapture_data.RDa"))
+source(here("R","Statistiques-v2.R"))
+source(here("R","Graphiques.R"))
+
+options(OutDec=",")
+knitr::opts_knit$set(root.dir = here())
+```
+
+Row
+-------------------------------------
+
+### Présentation du projet SonoRezé
+
+Circulation, travaux, oiseaux, cris d’enfants, musique… Les bruits du quotidien, légers ou forts, agréables ou gênants, diffèrent d’un lieu à l’autre et composent un paysage acoustique varié.
+
+L’idée de SonoRezé est de mesurer les niveaux de bruit un peu partout afin de dresser une cartographie sonore participative de la ville. Ce projet est mené par l’université Gustave-Eiffel et la Ville de Rezé, qui ont signé une convention. Il s’étendra jusqu’à l’été 2022.
+
+**COMMENT ÇA MARCHE ?**
+
+Les habitants de Rezé volontaires seront invités à télécharger l’application smartphone NoiseCapture pour participer au projet et réaliser collectivement un diagnostic citoyen des environnements sonores rezéens.
+
+L’application Android gratuite permet de réaliser une mesure de bruit qui informe sur son exposition au bruit. Il est possible de contribuer à l’élaboration collaborative de cartes de bruit en transférant de manière totalement anonyme ces informations vers la communauté.
+
+Parmi les volontaires, certains auront un rôle privilégié d’ambassadeurs. Ils pourront porter des propositions concertées auprès de la Ville de Rezé.
+
+Le résultat attendu par l’université est de tester sur une grande expérimentation la possibilité de s’appuyer sur NoiseCapture pour faire un diagnostic des environnements sonores d‘une ville d’environ 45 000 habitants, et de tester la faisabilité de cartes alternatives, s’appuyant sur les sources sonores ou des indicateurs spécifiques.
+
+La Ville de Rezé y voit, elle, un intérêt double : établir une cartographie participative des environnements sonores de la ville et créer un collectif de citoyens sensibilisé à la question du bruit en ville, avec l’idée, à terme, d’appuyer sa politique environnementale sur des expériences citoyennes.
+
+Au `r format(Sys.time(), "%d %m %Y")` il y a `r nb_participant` participants ayant réalisé `r nb_trace` mesures, correspondant à `r nb_mesure_h` h. d'enregistrement.
+
+
+Pour participer, rendez-vous [sur le site participatif de la ville de Rezé](https://jeparticipe.reze.fr/projet/sonoreze/)
+
+Row
+-------------------------------------
+    
+### Durées de mesure par participant (en pourcentages)
+
+```{r, echo=FALSE}
+p1
+```
+
+### Nombre de mesures par jours de la semaine
+
+```{r}
+p5
+```
+
+Row
+-------------------------------------
+    
+### Nombre de mesures réalisées chaque jour
+
+```{r}
+p4
+```
+
+### Nombre de mesures par heures du jour
+```{r, echo=FALSE}  
+p55
+```
+
+Column 
+-----------------------------------------------------------------------
+
+### Cartographie des durées (en sec.) sous forme de polygones
+
+```{r}
+map1
+```
+
+### Cartographie des durées (en sec.) sous forme de points dynamiques
+
+```{r}
+map2
+```
+

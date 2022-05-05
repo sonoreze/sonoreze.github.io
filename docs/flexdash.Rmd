@@ -1,0 +1,100 @@
+---
+title: "SONOREZÉ"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: spacelab
+    css: flexstyle.css
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+options(OutDec=",")
+knitr::opts_chunk$set(cache =FALSE)
+#knitr::opts_knit$set(root.dir = here())
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+htmltools::tagList(fontawesome::fa_html_dependency())
+fa <- rmarkdown::html_dependency_font_awesome()
+fa$attachment <- c("fonts/fa-brands-400.ttf","fonts/fa-regular-400.ttf","fonts/fa-solid-900.ttf")
+htmltools::tagList(fa)
+``` 
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,
+               rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
+               viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes)
+load(here("noisecapture_data.Rda"))
+source(here("R","Statistiques.R"))
+#source(here("R","Graphiques.R"))
+```
+
+
+Présentation
+=====================================  
+
+Row
+-------------------------------------
+ 
+### participants
+    
+```{r, echo=FALSE}
+valueBox(nb_participant, icon = "fa-users", color="warning") #fa-skull-crossbones")
+```
+
+### mesures réalisées
+    
+```{r}
+valueBox(format(nb_trace, big.mark=" "), icon = "fa-microphone-alt") #fa-sliders
+```
+
+### heures d'enregistrement
+    
+```{r}
+valueBox(format(nb_mesure_h, big.mark=" "), icon = "fa-database", color="warning") #fa-sliders
+```
+
+Row
+-------------------------------------
+
+### Présentation
+ 
+&nbsp;
+
+Circulation, travaux, oiseaux, cris d’enfants, musique… Les bruits du quotidien, légers ou forts, agréables ou gênants, diffèrent d’un lieu à l’autre et composent un paysage acoustique varié.
+
+L’idée de **SonoRezé** est de mesurer les niveaux de bruit un peu partout afin de dresser une cartographie sonore participative de la ville. Ce projet est mené par l’université Gustave Eiffel et la Ville de Rezé, qui ont signé une convention. Il s’étendra jusqu’à l’été 2022.
+
+Les habitants de Rezé volontaires sont invités à télécharger l’application smartphone NoiseCapture (disponible sur Android) pour participer au projet et réaliser collectivement un diagnostic citoyen des environnements sonores rezéens.
+
+Cette application gratuite permet de réaliser une mesure de bruit qui informe sur son exposition au bruit. Il est possible de contribuer à l’élaboration collaborative de cartes de bruit en transférant de manière totalement anonyme ces informations vers la communauté.
+
+Parmi les volontaires, certains ont un rôle privilégié d’ambassadeurs : ils peuvent porter des propositions concertées auprès de la Ville de Rezé.
+
+Le résultat attendu par l’université est de tester sur une grande expérimentation la possibilité de s’appuyer sur NoiseCapture pour faire un diagnostic des environnements sonores d‘une ville d’environ 45 000 habitants, et de tester la faisabilité de cartes alternatives, s’appuyant sur les sources sonores ou des indicateurs spécifiques.
+
+<!---
+Au `r format(Sys.time(), format="%d %B %Y")`  il y a `r nb_participant` participants ayant réalisé  mesures, correspondant à  h d'enregistrement.)
+-->
+
+&nbsp;
+
+**Contacts**
+
+arnaud.can@univ-eiffel.fr
+
+antonin.tribaleau@echo-system.tech
+
+<!---
+```{r pressure, echo=FALSE, fig.cap="A caption", out.width = '10%'}
+knitr::include_graphics(here("R","Images","logo-reze2.png"))
+```
+-->
+
+Participants
+=====================================  
+
+
+Mesures
+=====================================  

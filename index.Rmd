@@ -35,7 +35,7 @@ load(here("noisecapture_data.Rda"))
 source(here("R","Statistiques.R"))
 #source(here("R","Graphiques.R"))
 #source(here("R","Interpolation.R"))
-source(here("flexdashboard","flexdashs.R"))
+source(here("R","flexdashs.R"))
 ```
 
 Row

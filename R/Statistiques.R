@@ -1,5 +1,12 @@
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,hrbrthemes,forcats,rgdal,sp,sf,
+               rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
+               viridis,forcats,mapview,scales,flexdashboard,plotly)
+
 # Données aberrantes ?
-#load("noisecapture_data.Rda")
+load("noisecapture_data.Rda")
+#write.csv(noisecapture_data,file="noisecapture_data.csv")
 
 noisecapture_data <-as.data.frame(noisecapture_data)
 summary(noisecapture_data)
@@ -76,17 +83,23 @@ data_ind <- data_mes %>%
   group_by(DateJour) %>%
   summarise(NbId = n_distinct(Id))
 
-#verif <- data_ind[data_ind$DateJour == "2021-12-13",]
-#sum(rle(unique(verif$Id))$length)
-#verif <- data_ind[data_ind$DateJour == "2021-12-06",]
-#sum(rle(unique(verif$Id))$length)
-
 # Création d'un identifiant des durée d'enregistrements consécutifs,
 # ainsi que la variable jour
 # et calcul du nombre d'enregistrements (pas d'1 s) pour chaque durée
 data_trace <- as.data.frame(data_mes) %>%
   arrange(Id,Date) %>%
-  mutate(IdTrace=cumsum(c(TRUE, as.integer(diff(as.POSIXct(Date)), units = "secs") >= 2L))) %>%
+  group_by(Id) %>%
+  arrange(Date) %>%
+  mutate(IdTraceReset=cumsum(c(TRUE, as.integer(diff(as.POSIXct(Date)), units = "secs") >= 2L))) %>%
+  ungroup() %>%
+  mutate(IdGlobal=str_c(Id,IdTraceReset)) %>%
+  arrange(IdGlobal) %>%
+  group_by(Id) %>%
+  arrange(IdTraceReset) %>%
+  group_by(IdGlobal) %>%
+  mutate(IdTrace=cur_group_id()) %>%
+  ungroup() %>%
+  arrange(Id,IdTrace) %>%
   mutate(DateJour=as.Date(Date)) %>%
   mutate(DateJourSem=wday(Date)) %>%
   mutate(DateHeure=hour(as.POSIXct(Date))) %>%
@@ -109,27 +122,18 @@ data_trace %>%
   mutate(Pourcentage=n/sum(n)*100) %>%
   arrange(desc(n))
 
-data_trace <- data_trace %>%
-  mutate(Classe = case_when(DureeMinutes < 5 ~ "0-5",
-                            DureeMinutes < 10 ~ "5-10",
-                            DureeMinutes < 15 ~ "10-15",
-                            DureeMinutes < 20 ~ "15-20",
-                            DureeMinutes < 25 ~ "20-25",
-                            DureeMinutes < 30 ~ "25-30",
-                            DureeMinutes < 35 ~ "30-35",
-                            DureeMinutes < 40 ~ "35-40",
-                            DureeMinutes < 45 ~ "40-45",
-                            DureeMinutes < 50 ~ "45-50",
-                            DureeMinutes < 55 ~ "50-55",
-                            DureeMinutes < 60 ~ "55-60",
-                            TRUE ~ "> 60")) %>%
-  mutate(Classe = factor(Classe)) %>%
-  mutate(Classe = forcats::fct_relevel(Classe,c("0-5","5-10","10-15","15-20","20-25","25-30","30-35","35-40","40-45","45-50","50-55","55-60","> 60"))) %>%
-  arrange(Classe)
-levels(data_trace$Classe)
+# Participants actifs dans les 7 derniers jours
+id_recent <- data_trace %>%
+  select(Id,Date,IdTrace) %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  mutate(DiffTime = as.POSIXct(Sys.Date())-as.POSIXct(Date)) %>%
+  mutate(Recent = case_when(DiffTime < 8 ~ 1,
+                            TRUE ~ 0)) %>%
+  filter(Recent == 1) %>%
+  distinct(Id, .keep_all = TRUE)
 
-# Résumé
-summary(data_trace$DureeMinutes)
+part_derniereSem <- nrow(id_recent)
 
 # Évolution du nombre de traces par jour et en cumulé
 data_trace_jour <- data_trace %>%
@@ -138,11 +142,65 @@ data_trace_jour <- data_trace %>%
   summarise(NbTraceParJour = n()) %>%
   mutate(NbTraceParJourCum=cumsum(NbTraceParJour))
 
+# Somme durées trace par participant avec distinguo calibrage
+data_trace_part <- data_trace %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  mutate(DureeTot = sum(DureeMinutes/60)) %>%
+  distinct(Id, .keep_all = TRUE)
+
+part_duree_max <- max(data_trace_part$DureeTot)
+sum(data_trace_part$DureeTot)
+
 #summary(data_trace_jour[data_trace_jour$ ])
 
 # Évolution du nombre de traces par jour de la semaine
-data_trace %>%
+data_trace_summary <- data_trace %>%
   group_by(DateJourSem) %>%
   distinct(IdTrace, .keep_all = TRUE) %>%
   summarise(NbTraceParJourSem = n()) %>%
   mutate(NbTracParJourSemCum=cumsum(NbTraceParJourSem))
+
+####################
+## MYRIAM
+####################
+
+traces1 <- data_trace %>%
+  group_by(Id) %>%
+  summarise(DateDebut=min(ymd(as.Date(Date))),
+            DateFin=max(ymd(as.Date(Date))),
+            Duree=DateFin-DateDebut+1)
+
+traces2 <- data_trace %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  summarise(NbreEnregist = n()) %>%
+  mutate(Pourcentage=NbreEnregist/sum(NbreEnregist)*100)
+
+trace3 <- data_trace %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  mutate(DureeTot = round(sum(DureeMinutes/60),2)) %>%
+  distinct(Id, .keep_all = TRUE) %>%
+  select(Id,IdTrace,DureeTot)
+
+new_df0 <-
+  left_join(traces1,
+            traces2,
+            by = "Id")
+new_df <-
+  left_join(new_df0,
+            trace3,
+            by="Id") %>%
+  arrange(desc(NbreEnregist))
+
+
+new_def_2 <- data_trace %>%
+  select(Id,IdTrace,Date) %>%
+  distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
+  mutate(DateAbbreg=ymd(as.Date(Date))) %>%
+  ungroup() %>%
+  group_by(Id,DateAbbreg) %>%
+  mutate(NbreEnregist = n()) %>%
+  distinct(Id,DateAbbreg,.keep_all= TRUE)

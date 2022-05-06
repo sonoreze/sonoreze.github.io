@@ -27,12 +27,13 @@ Présentation
 ```{r}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,rgeos,geoR,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,rgeos,geoR,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat,wesanderson)
 
 load(here("noisecapture_data.Rda"))
 source(here("R","Statistiques.R"))
 #source(here("R","Graphiques.R"))
 #source(here("R","Interpolation.R"))
+source(here("R","color.R"))
 source(here("R","flexdashs.R"))
 ```
 
@@ -372,22 +373,17 @@ lz.sk84 <- st_transform(lz.sk, 4326)
 lz.sk84 <- na.omit(lz.sk84)
 
 #leaflet
-pal <- colorNumeric(
-  palette = "Blues",
-  domain = lz.sk84$var1.pred,
-  reverse=FALSE
-)
 map5 <- leaflet() %>%
   #addTiles() %>%
   addProviderTiles("CartoDB.Positron") %>%
   addCircleMarkers(
     data = lz.sk84,
-    color = ~pal(lz.sk84$var1.pred),
+    color = ~palsound100(lz.sk84$var1.pred),
     radius = 2,
     stroke = FALSE, fillOpacity = 0.6
   ) %>%
   addLegend("bottomleft",
-            pal = pal,
+            pal = palsound100,
             #colors = ~pal2,
             values = lz.sk84$var1.pred,
             title = "Levels",

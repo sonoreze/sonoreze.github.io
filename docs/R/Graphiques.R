@@ -317,7 +317,8 @@ stations_sf_4326 <- stations_sf %>%
   st_transform(4326) # repasse en WGS84 (LATti LONgi )
 
 pal2 <- colorNumeric(
-  palette = "Blues", #"RdYlGn",
+  #palette = "Blues", #"RdYlGn",
+  palette = as.character(wes_palette("Zissou1")),
   #n = 9,
   domain = stations_sf_4326$leq_mean,
   #na.color = "transparent",

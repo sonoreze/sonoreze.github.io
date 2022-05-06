@@ -57,6 +57,9 @@ p55_ply <- data_trace %>%
   layout(xaxis = list(title = 'Heure de la journée'),yaxis = list(title = 'Effectif des mesures'))
 
 ####################################
+## CARTES
+
+##### Données brutes
 Data_numerique <- data_nc[,c("x","y","leq_mean")]
 Data_numerique$leq_mean <- as.numeric(Data_numerique$leq_mean)
 Data_numerique <- Data_numerique %>%
@@ -84,9 +87,18 @@ stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
 stations_sf_4326 <- stations_sf %>%
   st_transform(4326) # repasse en WGS84 (LATti LONgi )
 
-pal2 <- colorNumeric(
-  palette = "Blues", #"RdYlGn",
-  #n = 9,
+# Palettes
+palsound10 <- colorNumeric(
+  palette = pal_sound10,
+  #n = 10,
+  domain = stations_sf_4326$leq_mean,
+  #na.color = "transparent",
+  reverse = FALSE
+)
+
+palsound100 <- colorNumeric(
+  palette = pal_sound100,
+  #n = 100,
   domain = stations_sf_4326$leq_mean,
   #na.color = "transparent",
   reverse = FALSE
@@ -97,11 +109,11 @@ options(OutDec=".")
 map1 <- leaflet(stations_sf_4326) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addScaleBar( position = c("bottomright"))%>%
-  addPolygons(color = ~pal2(stations_sf_4326$leq_mean), weight = 0, smoothFactor = 0.,
+  addPolygons(color = ~palsound100(stations_sf_4326$leq_mean), weight = 0, smoothFactor = 0.,
               opacity = 0.0, fillOpacity = 0.7
   ) %>%
   addLegend("bottomleft",
-            pal = pal2,
+            pal = palsound100,
             values = stations_sf_4326$leq_mean,
             na.label = "NA",
             title = "Niveaux",
@@ -328,22 +340,15 @@ stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
 stations_sf_4326 <- stations_sf %>%
   st_transform(4326) # repasse en WGS84 (LATti LONgi )
 
-pal2 <- colorNumeric(
-  palette = "Blues",
-  domain = stations$pleasantness
-  #na.color = "transparent",
-  #reverse = TRUE
-)
-
 options(OutDec=".")
 map4 <- leaflet(stations_sf_4326) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addScaleBar( position = c("bottomright"))%>%
-  addPolygons(color = ~pal2(stations$pleasantness), weight = 0, smoothFactor = 0.,
+  addPolygons(color = ~palsound10(stations$pleasantness), weight = 0, smoothFactor = 0.,
               opacity = 0.0, fillOpacity = 0.7,
   ) %>%
   addLegend("bottomleft",
-            pal = pal2,
+            pal = palsound10,
             #colors = ~pal2,
             values = stations$pleasantness,
             title = "Indice d'agrément",

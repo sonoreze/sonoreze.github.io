@@ -27,14 +27,10 @@ sound <- function (n, name = c("soundcolors"))
   palette
 }
 
+palsound100 <- sound(n=100)
 pie(rep(1, 100), col = palsound100)
 
-palsound100 <- sound(n=100)
 
-palbo <- colorNumeric(
-  palette = palsound100,
-  domain = stations$leq_mean
-)
 
 #```{r,message=FALSE,warning = FALSE,results='hide'}
 Data_numeric <- data_nc[,c("Id","Date","x","y","leq_mean")]
@@ -237,21 +233,31 @@ lz.sk84 <- st_transform(lz.sk, 4326)
 #lz.sk84_0 <- st_transform(lz.sk, 4326)
 lz.sk84 <- na.omit(lz.sk84)
 
+pal3 <- colorNumeric(
+  palette = "Blues",
+  domain = lz.sk84$var1.pred,
+  reverse = TRUE)
+
+pals <- colorNumeric(
+  palette = sound(100),
+  domain = lz.sk84$var1.pred,
+  reverse = TRUE)
+
 # #leaflet
-map5 <- leaflet() %>%
+map5 <- leaflet(lz.sk84) %>%
   #addTiles() %>%
   addProviderTiles("CartoDB.Positron") %>%
   addCircleMarkers(
     data = lz.sk84,
-    color = ~palsound100(lz.sk84$var1.pred),
+    color = ~pals(lz.sk84$var1.pred),
     radius = 2,
     stroke = FALSE, fillOpacity = 0.6
   ) %>%
   addLegend("bottomleft",
-            pal = palsound100,
+            pal = pals,
             #colors = ~pal2,
             values = lz.sk84$var1.pred,
-            title = "Levels",
+            title = "Niveaux",
             labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
             opacity = 1
   )

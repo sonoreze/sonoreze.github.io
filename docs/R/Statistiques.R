@@ -1,11 +1,9 @@
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,hrbrthemes,forcats,rgdal,sp,sf,
-               rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
-               viridis,forcats,mapview,scales,flexdashboard,plotly)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,rgeos,geoR,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
 
 # Données aberrantes ?
-#load("noisecapture_data.Rda")
+load("noisecapture_data.Rda")
 #write.csv(noisecapture_data,file="noisecapture_data.csv")
 
 noisecapture_data <-as.data.frame(noisecapture_data)

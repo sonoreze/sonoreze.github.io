@@ -5,7 +5,7 @@ pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,hrbrthemes,fo
                viridis,forcats,mapview,scales,flexdashboard,plotly)
 
 # Données aberrantes ?
-load("noisecapture_data.Rda")
+#load("noisecapture_data.Rda")
 #write.csv(noisecapture_data,file="noisecapture_data.csv")
 
 noisecapture_data <-as.data.frame(noisecapture_data)

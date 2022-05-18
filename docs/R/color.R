@@ -13,7 +13,7 @@ sound <- function (n, name = c("soundcolors"))
   orig = eval(parse(text = name))
   rgb = t(col2rgb(orig))
   temp = matrix(NA, ncol = 3, nrow = n)
-  x = seq(0, 1, , length(orig))
+  x = seq(0, 1, ,length(orig))
   xg = seq(0, 1, , n)
   for (k in 1:3) {
     hold = spline(x, rgb[, k], n = n)$y
@@ -27,9 +27,10 @@ sound <- function (n, name = c("soundcolors"))
 
 pal_sound100 <- sound(n=100)
 pal_sound10 <- sound(n=10)
-
+palsound100 <- sound(n=100)
+palsound10 <- sound(n=10)
 # par(mar = rep(0, 4))
-# pie(rep(1, length(pal2)), col = pal_sound)
+#pie(rep(1, 100), col = palsound100)
 #
 # pal_sound <- sound(n=10)
 # par(mar = rep(0, 4))

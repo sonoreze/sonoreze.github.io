@@ -3,6 +3,7 @@ options(OutDec=",")
 Sys.setlocale("LC_CTYPE","fr_FR.UTF-8")
 #Sys.setlocale("LC_TIME", "de_DE.UTF-8")
 options(encoding = "UTF-8")
+source(here("R","color.R"))
 
 # Sys.setenv("LANGUAGE"="En")
 # Sys.setlocale("LC_ALL", "en_GB.UTF-8")
@@ -317,13 +318,12 @@ stations_sf_4326 <- stations_sf %>%
   st_transform(4326) # repasse en WGS84 (LATti LONgi )
 
 pal2 <- colorNumeric(
-  #palette = "Blues", #"RdYlGn",
-  palette = as.character(wes_palette("Zissou1")),
+  palette = "Blues", #"RdYlGn",
   #n = 9,
-  domain = stations_sf_4326$leq_mean,
+  domain = stations$pleasantness,
   #na.color = "transparent",
-  reverse = FALSE
-  )
+  #reverse = TRUE
+)
 
 # Carto avec les polygones
 options(OutDec=".")
@@ -392,59 +392,60 @@ leaflet(SPDF_sf) %>%
 
 ### PLEASANTNESS
 ############# CARTO
-# Data_numerique_pleasant <- data_nc[,c("x","y","pleasantness")]
-# Data_numerique_pleasant$pleasantness <- as.numeric(Data_numerique_pleasant$pleasantness)
-# summary(Data_numerique_pleasant$pleasantness)
-# summary(factor(Data_numerique_pleasant$pleasantness))
-#
-# Data_numerique_pleasant <- Data_numerique_pleasant %>%
-#   drop_na()
-# summary(Data_numerique_pleasant$pleasantness)
-#
-# SPDF <- SpatialPointsDataFrame(coords=Data_numerique_pleasant[,1:2], data=as.data.frame(Data_numerique_pleasant))
-# SPDF_sf <- st_as_sf(SPDF, crs = 4326, agr = "constant", remove = F)
-# st_crs(SPDF_sf) <- 4326 #EPSG WGS84
-#
-# SPDF_sf_2154 <- st_transform(SPDF_sf, 2154) #LAMBERT 93
-#
-# bbox <- st_bbox(SPDF_sf_2154)
-# grid <- sf::st_make_grid(st_as_sfc(bbox),cellsize = 50, square = FALSE)  #Grid of 50 meters
-# st_crs(grid) <- 2154
-#
-# stations <- aggregate(x = SPDF_sf_2154, by = grid, FUN = median)         #Calculate median
-#
-# stations <- stations %>%
-#   drop_na(geometry) %>%
-#   drop_na(pleasantness)
-#
-# stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
-#                         remove = F)
-#
-# stations_sf_4326 <- stations_sf %>%
-#   st_transform(4326) # repasse en WGS84 (LATti LONgi )
-#
-# pal2 <- colorNumeric(
-#   palette = "Blues", #"RdYlGn",
-#   #n = 9,
-#   domain = stations$pleasantness,
-#   #na.color = "transparent",
-#   #reverse = TRUE
-# )
-#
-# map4 <- leaflet(stations_sf_4326) %>%
-#   addProviderTiles(providers$CartoDB.Positron) %>%
-#   addScaleBar( position = c("bottomright"))%>%
-#   addPolygons(color = ~pal2(pleasantness), weight = 0, smoothFactor = 0.,
-#               opacity = 0.0, fillOpacity = 0.7,
-#   ) %>%
-#   addLegend("bottomleft",
-#             pal = pal2,
-#             #colors = ~pal2,
-#             values = stations$pleasantness,
-#             title = "Index d'agrément",
-#             #labels = pal2,
-#             labFormat = labelFormat(suffix = "",big.mark = " ", transform = identity),
-#             opacity = 1
-#   )
-#
-# map4
+Data_numerique_pleasant <- data_nc[,c("x","y","pleasantness")]
+Data_numerique_pleasant$pleasantness <- as.numeric(Data_numerique_pleasant$pleasantness)
+summary(Data_numerique_pleasant$pleasantness)
+summary(factor(Data_numerique_pleasant$pleasantness))
+
+Data_numerique_pleasant <- Data_numerique_pleasant %>%
+  drop_na()
+summary(Data_numerique_pleasant$pleasantness)
+
+SPDF <- SpatialPointsDataFrame(coords=Data_numerique_pleasant[,1:2], data=as.data.frame(Data_numerique_pleasant))
+SPDF_sf <- st_as_sf(SPDF, crs = 4326, agr = "constant", remove = F)
+st_crs(SPDF_sf) <- 4326 #EPSG WGS84
+
+SPDF_sf_2154 <- st_transform(SPDF_sf, 2154) #LAMBERT 93
+
+bbox <- st_bbox(SPDF_sf_2154)
+grid <- sf::st_make_grid(st_as_sfc(bbox),cellsize = 50, square = FALSE)  #Grid of 50 meters
+st_crs(grid) <- 2154
+
+stations <- aggregate(x = SPDF_sf_2154, by = grid, FUN = median)         #Calculate median
+
+stations <- stations %>%
+  drop_na(geometry) %>%
+  drop_na(pleasantness)
+
+stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
+                        remove = F)
+
+stations_sf_4326 <- stations_sf %>%
+  st_transform(4326) # repasse en WGS84 (LATti LONgi )
+
+
+palss <- colorNumeric(
+  palette = "sound", #"RdYlGn",
+  #n = 9,
+  domain = stations$pleasantness,
+  #na.color = "transparent",
+  #reverse = TRUE
+)
+
+map4 <- leaflet(stations_sf_4326) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addScaleBar( position = c("bottomright"))%>%
+  addPolygons(color = ~pal2(pleasantness), weight = 0, smoothFactor = 0.,
+              opacity = 0.0, fillOpacity = 0.7,
+  ) %>%
+  addLegend("bottomleft",
+            pal = pal2,
+            #colors = ~pal2,
+            values = stations$pleasantness,
+            title = "Index d'agrément",
+            #labels = pal2,
+            labFormat = labelFormat(suffix = "",big.mark = " ", transform = identity),
+            opacity = 1
+  )
+
+map4

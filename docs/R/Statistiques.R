@@ -126,17 +126,15 @@ data_trace %>%
 id_recent <- data_trace %>%
   select(Id,Date,IdTrace) %>%
   distinct(IdTrace, .keep_all = TRUE) %>%
+  group_by(Id) %>%
   mutate(DiffTime = (as.POSIXct(Sys.Date())-as.POSIXct(Date))/(60*60*48)) %>%
   mutate(Recent = case_when(DiffTime < 8 ~ 1,
                             TRUE ~ 0)) %>%
   filter(Recent == 1) %>%
-  group_by(Id) %>%
   distinct(Id, .keep_all = TRUE)
 
 part_derniereSem <- nrow(id_recent)
 
-
-60*60*48
 # Évolution du nombre de traces par jour et en cumulé
 data_trace_jour <- data_trace %>%
   group_by(DateJour) %>%

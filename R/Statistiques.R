@@ -127,7 +127,7 @@ id_recent <- data_trace %>%
   select(Id,Date,IdTrace) %>%
   distinct(IdTrace, .keep_all = TRUE) %>%
   group_by(Id) %>%
-  mutate(DiffTime = as.POSIXct(Sys.Date())-as.POSIXct(Date)) %>%
+  mutate(DiffTime = (as.POSIXct(Sys.Date())-as.POSIXct(Date))/(60*60*48)) %>%
   mutate(Recent = case_when(DiffTime < 8 ~ 1,
                             TRUE ~ 0)) %>%
   filter(Recent == 1) %>%

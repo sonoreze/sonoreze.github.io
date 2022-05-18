@@ -121,7 +121,7 @@ map1 <- leaflet(stations_sf_4326) %>%
             opacity = .8,
             labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
   )
-map1
+
 
 ######################################
 # Data_numerique <- data_nc[,c("Id","Date","x","y","leq_mean")]

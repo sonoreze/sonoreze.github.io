@@ -343,7 +343,7 @@ stations_sf_4326 <- stations_sf %>%
 palsound100 <- colorNumeric(
   palette = pal_sound100,
   #n = 100,
-  domain = stations_sf_4326$leq_mean,
+  domain = stations_sf_4326$pleasantness,
   #na.color = "transparent",
   reverse = FALSE
 )

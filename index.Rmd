@@ -25,11 +25,12 @@ Présentation
 ===
 
 ```{r,message=FALSE,warning=FALSE}
+#options(repos = "https://mirror.ibcp.fr/pub/CRAN/")
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,sp,sf,rgeos,geoR,rgdal,tidyr,stars,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,sp,sf,rgeos,rgdal,tidyr,stars,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
 
-#mapview,rgdal
+#mapview,,geoR
 load(here("noisecapture_data.Rda"))
 source(here("R","Statistiques.R"))
 source(here("R","color.R"))
@@ -157,6 +158,8 @@ Row
  
 ### 
 
+<h5>Mesures brutes</h5>
+
 &nbsp;
 
 ```{r,message=FALSE}
@@ -164,6 +167,8 @@ map1
 ```
 
 ### 
+
+<h5>Mesures interpolées</h5>
 
 &nbsp;
 
@@ -355,7 +360,8 @@ map_interpo <- leaflet() %>%
             values = lz.sk84$var1.pred,
             title = "Niveaux sonores",
             labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
-            opacity = 1
+            opacity = 1,
+            #position = "topleft"
   )
 ```
 
@@ -364,6 +370,8 @@ map_interpo
 ```
 
 ### 
+
+<h5>Indice d'agrément</h5>
 
 &nbsp;
 

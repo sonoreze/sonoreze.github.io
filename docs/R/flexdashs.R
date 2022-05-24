@@ -116,10 +116,11 @@ map1 <- leaflet(stations_sf_4326) %>%
             pal = palsound100,
             values = stations_sf_4326$leq_mean,
             na.label = "NA",
-            title = "Niveaux",
+            title = "Niveaux sonores",
             #labels = pal2,
             opacity = .8,
             labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
+            #position = "topleft"
   )
 map1
 
@@ -169,6 +170,7 @@ map4 <- leaflet(stations_sf_4326) %>%
             #labels = pal2,
             na.label = "NA",
             labFormat = labelFormat(suffix = "",big.mark = " ", transform = identity),
-            opacity = 1
+            opacity = 1,
+            #position = "topleft"
   )
 map4

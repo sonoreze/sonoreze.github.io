@@ -24,15 +24,16 @@ htmltools::tagList(fa)
 Présentation
 ===
 
-```{r}
+```{r,message=FALSE,warning=FALSE}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,stars,gstat)
+pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,sp,sf,rgeos,geoR,rgdal,tidyr,stars,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
 
+#mapview,rgdal
 load(here("noisecapture_data.Rda"))
 source(here("R","Statistiques.R"))
 source(here("R","color.R"))
-#source(here("R","Graphiques.R"))
+source(here("R","Graphiques.R"))
 #source(here("R","Interpolation.R"))
 source(here("R","flexdashs.R"))
 ```
@@ -156,60 +157,28 @@ Row
  
 ### 
 
-<h5>Niveaux de bruit enregistrés</h5>
-
 &nbsp;
 
 ```{r,message=FALSE}
 map1
 ```
 
-###
-
-<h5>Niveaux de bruit interpolés</h5>
+### 
 
 &nbsp;
 
-```{r,message=FALSE,warning = FALSE,results='hide'}
-r <- c(255,130,160,184,206,226,243,232,205,161,117,67)
-g <- c(255,166,186,214,228,242,198,126,70,26,8,10)
-b <- c(255,173,191,209,204,191,131,77,62,77,92,74)
 
-sound <- function (n, name = c("soundcolors"))
-{
-  soundcolors = rgb(r, g, b, maxColorValue = 255)
-  name = match.arg(name)
-  orig = eval(parse(text = name))
-  rgb = t(col2rgb(orig))
-  temp = matrix(NA, ncol = 3, nrow = n)
-  x = seq(0, 1, ,length(orig))
-  xg = seq(0, 1, , n)
-  for (k in 1:3) {
-    hold = spline(x, rgb[, k], n = n)$y
-    hold[hold < 0] = 0
-    hold[hold > 255] = 255
-    temp[, k] = round(hold)
-  }
-  palette = rgb(temp[, 1], temp[, 2], temp[, 3], maxColorValue = 255)
-  palette
-}
-
-palsound100 <- sound(n=100)
-#pie(rep(1, 100), col = palsound100)
-
-
-Data_numeric <- data_nc[,c("Id","Date","x","y","leq_mean")]
-SPDF_sf = st_as_sf(Data_numeric, coords = c("x", "y"), crs = 4326, agr = "constant", remove = F)
+```{r,message=FALSE,warning=FALSE,results='hide'}
+Data_numerique <- data_nc[,c("Id","Date","x","y","leq_mean")]
+SPDF_sf = st_as_sf(Data_numerique, coords = c("x", "y"), crs = 4326, agr = "constant", remove = F)
 st_crs(SPDF_sf) <- 4326 #EPSG WGS84
 SPDF_sf_2154 <- st_transform(SPDF_sf, 2154) #LAMBERT 93
 st_write(SPDF_sf_2154, here("geo","pts2154_2.shp"), append=FALSE)
+#
 # ## -------------------------
 # #read layer shapefile
-# #PTS_ALL_2154 <- readOGR(dsn = here("geo"), layer = "PTS_ALL_2154_c") #Too much Lines
 Pts_50000_2154 <- st_read(here("geo","pts2154_2.shp"))
 #
-# # add Time correction
-# #Sys.time()
 # # Ajout de la variable jour et de la variable heure
 Pts_50000_2154 <- Pts_50000_2154 %>%
   mutate(DateJour=as.Date(Date)) %>%
@@ -293,32 +262,16 @@ Pts_50000_2154 <- Pts_50000_2154 %>%
                                JourSem == "D" &&  DateHeure == 22 ~ 1.47996624855368,
                                TRUE ~ 2.66641002509156)) %>%
   mutate(leq_mean_corr = leq_mean + Correctif)
-# #Sys.time()
-#
+
 Pts_50000_2154_sp <- as_Spatial(Pts_50000_2154)
 proj4string(Pts_50000_2154_sp) <- CRS("+init=epsg:2154")
 Pts_50000_WGS84 <- spTransform(Pts_50000_2154_sp ,CRS("+init=epsg:4326"))
 proj4string(Pts_50000_WGS84) <- CRS("+init=epsg:4326")
-
-# # NE FONCTIONNE PAS
-# #STFDF_jour <- stConstruct(Pts_50000_2154, space=c('x','y'), time='Date')
-# #spplot(STFDF_jour[,"2022-02-02",'leq_mean'],col.regions=brewer.pal(10,"Spectral"),cuts=10)
+#
 #
 # ######################################
 # # Spatial analysis - variogram - 50000 points
 Pts_50000_2154$LEQ1s <- Pts_50000_2154$leq_mean_corr
-#
-# # NE FONCTIONNE PAS
-# #var <- gstat::variogramST(leq_mean_corr~1,Pts_50000_WGS84,tunit="hours",assumeRegular=F,na.omit=T)
-# #var <- gstat::variogramST(LEQ1s~1,Pts_50000_2154, tunit="hours", assumeRegular=F, na.omit=T)
-#
-# # NE SERT PAS
-# #separableModel <- gstat::vgmST("separable", space = vgm(17.5, "Sph", 750,2.1), time = vgm(0.9, "Sph", 3.5, 0.1), sill = 124)
-#
-# #fit.StVariogram(empVgm, separableModel, fit.method = 7, stAni = 117.3,
-# #                method = "L-BFGS-B",
-# #               control = list(parscale = c(100, 1, 10, 1, 100)),
-# #                lower = c(10, 0, 0.1, 0, 0.1), upper = c(2000, 1, 12, 1, 200))
 #
 var_50000 <- variogram(leq_mean_corr ~ 1, Pts_50000_2154, cutoff = 500, width = 25)
 #
@@ -334,30 +287,22 @@ var_50000 <- variogram(leq_mean_corr ~ 1, Pts_50000_2154, cutoff = 500, width = 
 # # attr(var_50000.Exp, "SSErr")
 # # plot(var_50000,var_50000.Exp)
 # #
-# # # PAS DE CONVERGENCE
-# # var_50000.Gau <- fit.variogram(var_50000, vgm(sill = 140, "Gau", nugget = 40, range = 800))
-# # attr(var_50000.Gau, "SSErr")
-# # plot(var_50000,var_50000.Gau)
-# #
-# # #
-# # var_50000.Mat <- fit.variogram(var_50000, vgm(sill = 120, "Mat", nugget = 40, range = 600))
-# # attr(var_50000.Mat, "SSErr")
-# # plot(var_50000,var_50000.Mat)
 #
-# #lzn.fit = fit.variogram(var_50000, vgm(c("Gau", "Sph", "Mat", "Exp")), fit.kappa = TRUE)
+#
+# lzn.fit = fit.variogram(var_50000, vgm(c("Gau", "Sph", "Mat", "Exp")), fit.kappa = TRUE)
 # #lzn.fit
 #
 var_test.fit <- fit.variogram(var_50000, vgm(sill = 95, "Mat", range = 50))
-# #attr(var_test.fit, "SSErr")
-# #plot(var_50000,var_test.fit)
-#
+#attr(var_test.fit, "SSErr")
+#plot(var_50000,var_test.fit)
+
 var_50000.fit <- fit.variogram(var_50000, vgm(sill = 200, "Exp", nugget = 40, range = 600))
-# #attr(var_50000.fit, "SSErr")
-# #plot(var_50000,var_50000.fit)
+#attr(var_50000.fit, "SSErr")
+#plot(var_50000,var_50000.fit)
 #
 # ######################################
 # ## GRILLE DE PROJECTION
-#grid
+# #grid
 bb <- sp::bbox(Pts_50000_2154_sp)
 cs <- c(1, 1)*25
 cc <- bb[, 1] + (cs/2)
@@ -367,36 +312,25 @@ grd
 sp_grd <- SpatialGridDataFrame(grd,
                                data=data.frame(id=1:prod(cd)),
                                proj4string=CRS(proj4string(Pts_50000_2154_sp)))
-#summary(sp_grd)
-
+# #summary(sp_grd)
+#
 proj4string(sp_grd) <- CRS("+init=epsg:2154")
 sp_grd84 <- spTransform(sp_grd ,CRS("+init=epsg:4326"))
 sp_grd84 <-st_as_sf(sp_grd84)
 #
-# leaflet() %>%
-#   #addTiles() %>%
-#   addProviderTiles("CartoDB.Positron") %>%
-#   addCircleMarkers(
-#     data = sp_grd84,
-#     radius = 1,
-#     stroke = FALSE, fillOpacity = 0.2
-#   )
 # #######################################
 # ## spatial prediction
-# #sel100 <- sample(1:78899,10000 )
-# #Pts_50000_2154_sel <- Pts_50000_2154[sel100, ]
-# #spatial prediction
 #
 sf_grd<- st_as_sf(sp_grd)
-lz.sk <- krige(leq_mean_corr  ~ 1, Pts_50000_2154, sf_grd, var_50000.fit,nmin=5,nmax=10, maxdist =100) #maxdist =150
-#lz.sk84 <- spTransform(lz.sk ,CRS("+init=epsg:4326"))
-#lz.sk84<-st_as_sf(lz.sk84)
+lz.sk <- krige(leq_mean_corr  ~ 1, Pts_50000_2154, sf_grd, var_50000.fit,nmin=1,nmax=10, maxdist =100) #maxdist =150
 #dim(lz.sk[lz.sk$var1.var == "NA",])[1]/dim(lz.sk)[1]*100
-
-
+#
+# ##########
+#
 lz.sk84 <- st_transform(lz.sk, 4326)
-#lz.sk84_0 <- st_transform(lz.sk, 4326)
+# #lz.sk84_0 <- st_transform(lz.sk, 4326)
 lz.sk84 <- na.omit(lz.sk84)
+#
 
 palsound100 <- colorNumeric(
   palette = pal_sound100,
@@ -406,9 +340,7 @@ palsound100 <- colorNumeric(
   reverse = FALSE
 )
 
-
-# #leaflet
-map5 <- leaflet(lz.sk84) %>%
+map_interpo <- leaflet() %>%
   #addTiles() %>%
   addProviderTiles("CartoDB.Positron") %>%
   addCircleMarkers(
@@ -421,19 +353,17 @@ map5 <- leaflet(lz.sk84) %>%
             pal = palsound100,
             #colors = ~pal2,
             values = lz.sk84$var1.pred,
-            title = "Niveaux",
+            title = "Niveaux sonores",
             labFormat = labelFormat(suffix = " dB",big.mark = " ", transform = identity),
             opacity = 1
   )
 ```
 
-```{r,message=FALSE}
-map5
+```{r,message=FALSE,warning=FALSE}
+map_interpo
 ```
 
 ### 
-
-<h5>Indice d'agrément</h5>
 
 &nbsp;
 

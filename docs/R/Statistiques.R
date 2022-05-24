@@ -1,9 +1,11 @@
-if (!require("pacman")) install.packages("pacman")
-library(pacman)
-pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,ggforce,forcats,rgdal,sp,sf,rgeos,geoR,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,viridis,forcats,mapview,scales,flexdashboard,fontawesome,rprojroot,ggthemes,plotly,spacetime,gstat)
+# if (!require("pacman")) install.packages("pacman")
+# library(pacman)
+# pacman::p_load(here,thematic,lubridate,dplyr,tidyr,stringr,ggplot2,hrbrthemes,forcats,sp,sf,
+#                rgeos,tidyr,devtools,leaflet,leaflet.extras,jsonlite,RColorBrewer,
+#                viridis,forcats,mapview,scales,flexdashboard,plotly)
 
 # Données aberrantes ?
-load("noisecapture_data.Rda")
+#load("noisecapture_data.Rda")
 #write.csv(noisecapture_data,file="noisecapture_data.csv")
 
 noisecapture_data <-as.data.frame(noisecapture_data)
@@ -125,7 +127,7 @@ id_recent <- data_trace %>%
   select(Id,Date,IdTrace) %>%
   distinct(IdTrace, .keep_all = TRUE) %>%
   group_by(Id) %>%
-  mutate(DiffTime = (as.POSIXct(Sys.Date())-as.POSIXct(Date))/(60*60*48)) %>%
+  mutate(DiffTime = (as.POSIXct(Sys.Date())-as.POSIXct(Date))) %>% #/(60*60*48)) %>%
   mutate(Recent = case_when(DiffTime < 8 ~ 1,
                             TRUE ~ 0)) %>%
   filter(Recent == 1) %>%

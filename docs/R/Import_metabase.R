@@ -129,3 +129,4 @@ save(noisecapture_data, file ="noisecapture_data.Rda")
 saveRDS(noisecapture_data, file = "noisecapture_data.rds")
 
 
+#write.csv(noisecapture_data,file="noisecapture_data.csv")

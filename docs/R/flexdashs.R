@@ -112,7 +112,7 @@ map1 <- leaflet(stations_sf_4326) %>%
   addPolygons(color = ~palsound100(stations_sf_4326$leq_mean), weight = 0, smoothFactor = 0.,
               opacity = 0.0, fillOpacity = 0.7
   ) %>%
-  addLegend("bottomleft",
+  addLegend("topleft",
             pal = palsound100,
             values = stations_sf_4326$leq_mean,
             na.label = "NA",
@@ -155,15 +155,23 @@ stations_sf <- st_as_sf(stations, crs = 2154, agr = "constant",
 stations_sf_4326 <- stations_sf %>%
   st_transform(4326) # repasse en WGS84 (LATti LONgi )
 
+palsound100 <- colorNumeric(
+  palette = pal_sound100,
+  #n = 100,
+  domain = stations$pleasantness,
+  #na.color = "transparent",
+  reverse = FALSE
+)
+
 options(OutDec=".")
 map4 <- leaflet(stations_sf_4326) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addScaleBar( position = c("bottomright"))%>%
-  addPolygons(color = ~palsound10(stations$pleasantness), weight = 0, smoothFactor = 0.,
+  addPolygons(color = ~palsound100(stations$pleasantness), weight = 0, smoothFactor = 0.,
               opacity = 0.0, fillOpacity = 0.7,
   ) %>%
-  addLegend("bottomleft",
-            pal = palsound10,
+  addLegend("topleft",
+            pal = palsound100,
             #colors = ~pal2,
             values = stations$pleasantness,
             title = "Indice d'agrément",
